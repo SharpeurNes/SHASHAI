@@ -1,22 +1,39 @@
 import dotenv from 'dotenv';
 import './twitchClient.js';
 import { pickAndClearWindow, getWindowSize } from './chatBuffer.js';
+import { generateReply } from './llm.js';
+import { checkTtsServer, enqueueSpeech } from './tts.js';
 
 dotenv.config();
 
 const intervalSeconds = Number(process.env.PICK_INTERVAL_SECONDS) || 30;
 
-console.log(`SHASHAI démarré. Tirage toutes les ${intervalSeconds}s.`);
+async function start() {
+  await checkTtsServer();
 
-setInterval(() => {
-  console.log(`(fenêtre fermée, ${getWindowSize()} message(s) reçus)`);
+  console.log(`SHASHAI démarré. Tirage toutes les ${intervalSeconds}s.`);
 
-  const picked = pickAndClearWindow();
+  setInterval(async () => {
+    console.log(`(fenêtre fermée, ${getWindowSize()} message(s) reçus)`);
 
-  if (!picked) {
-    console.log('-> aucun message cette fois-ci.');
-    return;
-  }
+    const picked = pickAndClearWindow();
 
-  console.log(`-> message retenu : [${picked.username}] ${picked.message}`);
-}, intervalSeconds * 1000);
+    if (!picked) {
+      console.log('-> aucun message cette fois-ci.');
+      return;
+    }
+
+    console.log(`-> message retenu : [${picked.username}] ${picked.message}`);
+
+    try {
+      const reply = await generateReply(picked.username, picked.message);
+      console.log(`-> réponse générée : ${reply}`);
+
+      enqueueSpeech(reply);
+    } catch (err) {
+      console.error('Erreur pendant la génération :', err.message);
+    }
+  }, intervalSeconds * 1000);
+}
+
+start();
