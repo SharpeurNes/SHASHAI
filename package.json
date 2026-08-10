@@ -1,0 +1,15 @@
+{
+  "name": "shashai",
+  "version": "1.0.0",
+  "description": "VTuber IA pilotée par LLM + TTS + VTube Studio, avec chat Twitch",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "keywords": [],
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "tmi.js": "^1.8.5"
+  }
+}
