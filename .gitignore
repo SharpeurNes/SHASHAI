@@ -3,3 +3,4 @@ node_modules/
 *.log
 models/
 audio-debug/
+vts-auth-token.txt

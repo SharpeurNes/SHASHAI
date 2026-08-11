@@ -3,6 +3,8 @@ import './twitchClient.js';
 import { pickAndClearWindow, getWindowSize } from './chatBuffer.js';
 import { generateReply } from './llm.js';
 import { checkTtsServer, enqueueSpeech } from './tts.js';
+import { triggerRandomSpeakingAnimation } from './vtsClient.js';
+import './vtsClient.js';
 
 dotenv.config();
 
@@ -30,6 +32,7 @@ async function start() {
       console.log(`-> réponse générée : ${reply}`);
 
       enqueueSpeech(reply);
+      triggerRandomSpeakingAnimation();
     } catch (err) {
       console.error('Erreur pendant la génération :', err.message);
     }
