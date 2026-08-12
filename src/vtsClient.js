@@ -1,6 +1,7 @@
 import { ApiClient } from 'vtubestudio';
 import WebSocket from 'ws';
 import { readFile, writeFile } from 'fs/promises';
+import { emitEvent } from './controlPanel.js';
 
 const TOKEN_PATH = './vts-auth-token.txt';
 
@@ -27,10 +28,12 @@ export const vts = new ApiClient({
 
 vts.on('connect', () => {
   console.log('✓ Connecté à VTube Studio.');
+  emitEvent('status', { module: 'vts', state: 'ok' });
 });
 
 vts.on('disconnect', () => {
   console.log('✗ Déconnecté de VTube Studio.');
+  emitEvent('status', { module: 'vts', state: 'error' });
 });
 
 export async function triggerHotkey(hotkeyID) {

@@ -4,3 +4,4 @@ node_modules/
 models/
 audio-debug/
 vts-auth-token.txt
+logs/

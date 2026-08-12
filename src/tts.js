@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { writeFile } from 'fs/promises';
-import player from 'node-wav-player';
+import { execFile } from 'child_process';
+import { emitEvent } from './controlPanel.js';
 
 dotenv.config();
 
@@ -43,24 +44,38 @@ export async function generateSpeech(text) {
   return Buffer.from(arrayBuffer);
 }
 
+const MPV_AUDIO_DEVICE = 'wasapi/{552843d5-3f22-49ed-8d1c-596ff7dc85bd}';
+
 export async function playSpeech(audioBuffer) {
   const filePath = './audio-debug/latest.wav';
   await writeFile(filePath, audioBuffer);
   console.log(`  (audio sauvegardé : ${filePath})`);
 
-  await player.play({ path: filePath });
+  return new Promise((resolve, reject) => {
+    execFile(
+      'mpv',
+      ['--no-video', '--really-quiet', `--audio-device=${MPV_AUDIO_DEVICE}`, filePath],
+      (err) => {
+        if (err) reject(err);
+        else resolve();
+      }
+    );
+  });
 }
 
 let queue = Promise.resolve();
 
-export function enqueueSpeech(text) {
+export function enqueueSpeech(text, onPlaybackStart) {
   queue = queue
     .then(async () => {
       const audio = await generateSpeech(text);
+      if (onPlaybackStart) onPlaybackStart();
       await playSpeech(audio);
+      emitEvent('status', { module: 'tts', state: 'ok' });
     })
     .catch((err) => {
       console.error('Erreur dans la file audio :', err.message);
+      emitEvent('status', { module: 'tts', state: 'error' });
     });
 
   return queue;

@@ -11,8 +11,9 @@
   "dependencies": {
     "@google/genai": "^2.16.0",
     "dotenv": "^17.4.2",
-    "node-wav-player": "^1.0.0",
+    "express": "^5.2.1",
     "sherpa-onnx-node": "^1.13.4",
+    "socket.io": "^4.8.3",
     "tmi.js": "^1.8.5",
     "vtubestudio": "^3.11.0",
     "ws": "^8.21.3"

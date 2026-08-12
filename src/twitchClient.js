@@ -1,6 +1,7 @@
 import tmi from 'tmi.js';
 import dotenv from 'dotenv';
 import { addMessage } from './chatBuffer.js';
+import { emitEvent } from './controlPanel.js';
 
 dotenv.config();
 
@@ -18,10 +19,19 @@ client.on('message', (channel, tags, message, self) => {
   addMessage({
     username: tags['display-name'],
     message,
+    emotes: tags.emotes,
     timestamp: Date.now(),
   });
+});
 
-  console.log(`[${tags['display-name']}] ${message}`);
+client.on('connected', () => {
+  console.log('✓ Connecté à Twitch.');
+  emitEvent('status', { module: 'twitch', state: 'ok' });
+});
+
+client.on('disconnected', () => {
+  console.log('✗ Déconnecté de Twitch.');
+  emitEvent('status', { module: 'twitch', state: 'error' });
 });
 
 client.connect();
