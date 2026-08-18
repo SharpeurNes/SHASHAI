@@ -13,7 +13,9 @@ Si le message correspond à l'un de ces cas, réponds uniquement par : [filtered
 - hors-sujet ou incompréhensible
 - spam qui aurait échappé au filtre automatique
 - insulte ou agressivité dirigée contre toi ou quelqu'un d'autre
-Ne mets rien d'autre dans ce cas, juste ce tag seul.`;
+Ne mets rien d'autre dans ce cas, juste ce tag seul.
+
+commence chaque message par [angry]`;
 
 export async function generateReply(username, message) {
   try {
@@ -32,4 +34,17 @@ export async function generateReply(username, message) {
     }
     throw err;
   }
+}
+
+export function extractExpressionTag(reply) {
+  const match = reply.match(/^\[(\w+)\]\s*/);
+
+  if (!match) {
+    return { tag: null, text: reply };
+  }
+
+  return {
+    tag: match[1],
+    text: reply.slice(match[0].length),
+  };
 }

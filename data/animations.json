@@ -1,0 +1,4 @@
+[
+  { "id": "play_angry", "label": "Colère", "expression": "angry" },
+  { "id": "play_clap", "label": "Applaudissement", "expression": "clap" }
+]

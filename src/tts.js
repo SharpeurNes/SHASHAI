@@ -69,7 +69,9 @@ export function enqueueSpeech(text, onPlaybackStart) {
   queue = queue
     .then(async () => {
       const audio = await generateSpeech(text);
-      if (onPlaybackStart) onPlaybackStart();
+      const duration = getWavDuration(audio);
+
+      if (onPlaybackStart) onPlaybackStart(duration);
       await playSpeech(audio);
       emitEvent('status', { module: 'tts', state: 'ok' });
     })
@@ -79,4 +81,14 @@ export function enqueueSpeech(text, onPlaybackStart) {
     });
 
   return queue;
+}
+
+function getWavDuration(buffer) {
+  const sampleRate = buffer.readUInt32LE(24);
+  const channels = buffer.readUInt16LE(22);
+  const bitsPerSample = buffer.readUInt16LE(34);
+  const dataIndex = buffer.indexOf('data') + 4;
+  const dataSize = buffer.readUInt32LE(dataIndex);
+
+  return dataSize / (sampleRate * channels * (bitsPerSample / 8));
 }

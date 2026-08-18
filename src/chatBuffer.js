@@ -1,6 +1,15 @@
 const MAX_SIZE = 200;
 let window = [];
 let fallback = [];
+let paused = false;
+
+export function setPaused(value) {
+  paused = value;
+}
+
+export function isPaused() {
+  return paused;
+}
 
 function isOnlyEmotes(message, emotesTag) {
   if (!emotesTag) return false;
@@ -19,6 +28,7 @@ function isOnlyEmotes(message, emotesTag) {
 }
 
 export function addMessage(entry) {
+  if (paused) return;
   if (window.length >= MAX_SIZE) return;
 
   const wordCount = entry.message.trim().split(/\s+/).filter(Boolean).length;

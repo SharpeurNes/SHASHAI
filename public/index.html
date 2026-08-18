@@ -20,18 +20,45 @@
 
   <div id="statuses">
     <span class="dot" data-module="twitch">Twitch</span>
-    <span class="dot" data-module="vts">VTube Studio</span>
+    <span class="dot" data-module="vnyan">VNyan</span>
     <span class="dot" data-module="llm">LLM</span>
     <span class="dot" data-module="tts">TTS</span>
   </div>
 
   <div class="layout">
 
-    <div class="card">
-      <div class="card-header">
-        <span>Activité en direct</span>
+    <div class="main-col">
+
+      <div class="card">
+        <div class="card-header">
+          <span>Activité en direct</span>
+        </div>
+        <div id="log"></div>
       </div>
-      <div id="log"></div>
+
+      <div class="controls-row">
+
+        <div class="card">
+          <div class="card-header">
+            <span>Mode manuel</span>
+            <button id="toggle-pause" class="btn-toggle">Pause</button>
+          </div>
+          <div class="card-body">
+            <textarea id="manual-text" placeholder="Texte à faire dire à SHASHAI…" disabled></textarea>
+            <button id="manual-submit" disabled>Générer TTS</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Animations</div>
+          <div class="card-body">
+            <div id="animations-grid" class="animations-grid"></div>
+            <button id="stop-anim-btn" class="anim-btn anim-btn-stop">Stop</button>
+          </div>
+        </div>
+
+      </div>
+
     </div>
 
     <div class="sidebar">
@@ -41,6 +68,7 @@
         <div class="card-body">
           <div class="stat-row"><span>Messages traités</span><strong id="stat-messages">0</strong></div>
           <div class="stat-row"><span>Réponses générées</span><strong id="stat-replies">0</strong></div>
+          <div class="stat-row"><span>Animations</span><strong id="stat-animations">0</strong></div>
           <div class="stat-row"><span>Filtrés</span><strong id="stat-filtered">0</strong></div>
           <div class="stat-row"><span>Erreurs</span><strong id="stat-errors">0</strong></div>
         </div>
@@ -51,6 +79,7 @@
         <div class="card-body">
           <div class="stat-row"><span>Messages traités</span><strong id="alltime-messages">0</strong></div>
           <div class="stat-row"><span>Réponses générées</span><strong id="alltime-replies">0</strong></div>
+          <div class="stat-row"><span>Animations</span><strong id="alltime-animations">0</strong></div>
           <div class="stat-row"><span>Filtrés</span><strong id="alltime-filtered">0</strong></div>
           <div class="stat-row"><span>Erreurs</span><strong id="alltime-errors">0</strong></div>
         </div>
@@ -77,105 +106,7 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    const connectionEl = document.getElementById('connection');
-    const logEl = document.getElementById('log');
-
-    const stats = { messages: 0, replies: 0, filtered: 0, errors: 0 };
-    const statEls = {
-      messages: document.getElementById('stat-messages'),
-      replies: document.getElementById('stat-replies'),
-      filtered: document.getElementById('stat-filtered'),
-      errors: document.getElementById('stat-errors'),
-    };
-
-    function bumpStat(key) {
-      stats[key]++;
-      statEls[key].textContent = stats[key];
-    }
-
-    socket.on('connect', () => {
-      connectionEl.textContent = 'Connecté';
-      connectionEl.className = 'connected';
-    });
-
-    socket.on('disconnect', () => {
-      connectionEl.textContent = 'Déconnecté';
-      connectionEl.className = 'disconnected';
-    });
-
-    socket.on('status', ({ module, state }) => {
-      const dot = document.querySelector(`.dot[data-module="${module}"]`);
-      if (dot) {
-        dot.classList.remove('ok', 'error');
-        dot.classList.add(state);
-      }
-    });
-
-    function describe(type, payload) {
-      switch (type) {
-        case 'message_picked':
-          return `<span class="who">${payload.username}</span> — ${payload.message}`;
-        case 'reply_generated':
-          return payload.reply;
-        case 'speaking_started':
-          return `SHASHAI parle : "${payload.reply}"`;
-        case 'error':
-          return payload.message;
-        case 'filtered':
-          return `<span class="who">${payload.username}</span> — <em>message filtré</em>`;
-        default:
-          return JSON.stringify(payload);
-      }
-    }
-
-    function addLogEntry(type, payload) {
-      const entry = document.createElement('div');
-      entry.className = 'entry';
-      const time = new Date().toLocaleTimeString('fr-FR');
-      entry.innerHTML = `
-        <span class="time">${time}</span>
-        <span class="type type-${type}">${type.replace(/_/g, ' ')}</span>
-        <span class="content">${describe(type, payload)}</span>
-      `;
-      logEl.prepend(entry);
-    }
-
-    function isDisplayable(type, payload) {
-      if (type === 'history') return false;
-      if (type === 'window_closed') return false;
-      if (type === 'status') return false;
-      if (type === 'all_time_stats') return false;
-      return true;
-    }
-
-    function trackStats(type) {
-      if (type === 'message_picked') bumpStat('messages');
-      if (type === 'reply_generated') bumpStat('replies');
-      if (type === 'filtered') bumpStat('filtered');
-      if (type === 'error') bumpStat('errors');
-    }
-
-    socket.on('history', (events) => {
-      for (const { type, payload } of events) {
-        trackStats(type);
-        if (isDisplayable(type, payload)) addLogEntry(type, payload);
-      }
-    });
-
-    socket.on('all_time_stats', (stats) => {
-      document.getElementById('alltime-messages').textContent = stats.messages;
-      document.getElementById('alltime-replies').textContent = stats.replies;
-      document.getElementById('alltime-filtered').textContent = stats.filtered;
-      document.getElementById('alltime-errors').textContent = stats.errors;
-    });
-
-    socket.onAny((type, payload) => {
-      trackStats(type);
-      if (isDisplayable(type, payload)) addLogEntry(type, payload);
-    });
-  </script>
+  <script src="/script.js"></script>
 </body>
 
 </html>

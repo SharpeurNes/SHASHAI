@@ -2,6 +2,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { readFile, writeFile } from 'fs/promises';
+import { loadAnimations } from './animations.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -19,7 +20,7 @@ async function loadAllTimeStats() {
     const raw = await readFile(STATS_PATH, 'utf-8');
     return JSON.parse(raw);
   } catch {
-    return { messages: 0, replies: 0, filtered: 0, errors: 0 };
+    return { messages: 0, replies: 0, filtered: 0, errors: 0, animations: 0 };
   }
 }
 
@@ -34,18 +35,25 @@ const STAT_KEY_BY_EVENT = {
   reply_generated: 'replies',
   filtered: 'filtered',
   error: 'errors',
+  animation_triggered: 'animations',
 };
 
-function bumpAllTimeStats(type) {
+async function bumpAllTimeStats(type) {
   const key = STAT_KEY_BY_EVENT[type];
   if (!key) return;
 
   allTimeStats[key]++;
-  saveAllTimeStats();
+  await saveAllTimeStats();
   io.emit('all_time_stats', allTimeStats);
 }
 
-io.on('connection', (socket) => {
+const commandHandlers = {};
+
+export function onCommand(name, handler) {
+  commandHandlers[name] = handler;
+}
+
+io.on('connection', async (socket) => {
   console.log('  (panneau de contrôle connecté)');
 
   for (const [module, state] of Object.entries(lastStatuses)) {
@@ -53,7 +61,12 @@ io.on('connection', (socket) => {
   }
 
   socket.emit('all_time_stats', allTimeStats);
+  socket.emit('animations_list', await loadAnimations());
   socket.emit('history', eventLog);
+
+  for (const [name, handler] of Object.entries(commandHandlers)) {
+    socket.on(name, handler);
+  }
 });
 
 export function startControlPanel(port = 3000) {
