@@ -1,7 +1,15 @@
+import dotenv from 'dotenv';
+dotenv.config();
 const MAX_SIZE = 200;
 let window = [];
 let fallback = [];
 let paused = false;
+
+const EXCLUDED_USERNAMES = (process.env.EXCLUDED_USERNAMES || '')
+  .split(',')
+  .map((name) => name.trim().toLowerCase())
+  .filter(Boolean);
+
 
 export function setPaused(value) {
   paused = value;
@@ -30,12 +38,13 @@ function isOnlyEmotes(message, emotesTag) {
 export function addMessage(entry) {
   if (paused) return;
   if (window.length >= MAX_SIZE) return;
+  if (EXCLUDED_USERNAMES.includes(entry.username.toLowerCase())) return;
 
   const wordCount = entry.message.trim().split(/\s+/).filter(Boolean).length;
 
-  if (wordCount <= 2) return; // trop court
-  if (entry.message.startsWith('!')) return; // commande bot
-  if (isOnlyEmotes(entry.message, entry.emotes)) return; // uniquement des emotes
+  if (wordCount <= 1) return;
+  if (entry.message.startsWith('!')) return;
+  if (isOnlyEmotes(entry.message, entry.emotes)) return;
 
   window.push(entry);
 }

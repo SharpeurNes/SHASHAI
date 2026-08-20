@@ -33,6 +33,10 @@ export async function generateSpeech(text) {
     body: JSON.stringify({
       input: text,
       voice: CHATTERBOX_VOICE,
+      language: 'fr',
+      exaggeration: 0.55,
+      cfg_weight: 0.7,
+      temperature: 0.65,
     }),
   });
 
@@ -54,7 +58,7 @@ export async function playSpeech(audioBuffer) {
   return new Promise((resolve, reject) => {
     execFile(
       'mpv',
-      ['--no-video', '--really-quiet', `--audio-device=${MPV_AUDIO_DEVICE}`, filePath],
+      ['--no-video', '--really-quiet', '--volume=160', `--audio-device=${MPV_AUDIO_DEVICE}`, filePath],
       (err) => {
         if (err) reject(err);
         else resolve();
