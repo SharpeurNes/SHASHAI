@@ -75,6 +75,12 @@ function describe(type, payload) {
       return payload.paused ? 'Bot mis en pause' : 'Bot relancé';
     case 'caption':
       return `Affichage OBS: "${payload.duration}s"`;
+    case 'sub_thanks':
+      return `Remerciement sub : "${payload.text}"` + tagBadge(payload.tag);
+    case 'chat_reply_sent':
+      return payload.reply + tagBadge(payload.tag);
+    case 'text_mode':
+      return payload.enabled ? 'Mode texte activé' : 'Mode voix activé';
     default:
       return JSON.stringify(payload);
   }
@@ -169,4 +175,15 @@ socket.on('animations_list', (animations) => {
 
 document.getElementById('stop-anim-btn').addEventListener('click', () => {
   socket.emit('trigger_animation', { id: 'stop_anim' });
+});
+
+const textModeBtn = document.getElementById('toggle-text-mode');
+
+textModeBtn.addEventListener('click', () => {
+  socket.emit('toggle_text_mode');
+});
+
+socket.on('text_mode', ({ enabled }) => {
+  textModeBtn.textContent = enabled ? 'Mode voix' : 'Mode texte';
+  textModeBtn.classList.toggle('is-paused', enabled);
 });

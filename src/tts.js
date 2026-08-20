@@ -8,22 +8,37 @@ dotenv.config();
 const CHATTERBOX_URL = process.env.CHATTERBOX_URL;
 const CHATTERBOX_VOICE = process.env.CHATTERBOX_VOICE;
 
-export async function checkTtsServer() {
+let ttsAvailable = false;
+
+async function pingTts() {
   try {
     const response = await fetch(`${CHATTERBOX_URL}/health`);
     const data = await response.json();
-    if (!data.model_loaded) {
-      throw new Error('Le modèle Chatterbox n\'est pas encore chargé.');
-    }
-    console.log('✓ Serveur Chatterbox détecté et prêt.');
-  } catch (err) {
-    console.error(
-      `✗ Impossible de joindre le serveur Chatterbox sur ${CHATTERBOX_URL}.\n` +
-      `  Lance-le d'abord avec : uv run uvicorn app.main:app --host 0.0.0.0 --port 4123\n` +
-      `  (dans le dossier chatterbox-tts-api)`
-    );
-    process.exit(1);
+    return !!data.model_loaded;
+  } catch {
+    return false;
   }
+}
+
+export async function checkTtsServer() {
+  ttsAvailable = await pingTts();
+  emitEvent('status', { module: 'tts', state: ttsAvailable ? 'ok' : 'error' });
+  console.log(ttsAvailable
+    ? '✓ Serveur Chatterbox détecté et prêt.'
+    : `  (Chatterbox non joignable sur ${CHATTERBOX_URL}, nouvelle tentative périodique...)`);
+
+  setInterval(async () => {
+    const nowAvailable = await pingTts();
+    if (nowAvailable !== ttsAvailable) {
+      ttsAvailable = nowAvailable;
+      emitEvent('status', { module: 'tts', state: ttsAvailable ? 'ok' : 'error' });
+      console.log(nowAvailable ? '✓ Chatterbox reconnecté.' : '✗ Chatterbox devenu injoignable.');
+    }
+  }, 10000);
+}
+
+export function isTtsAvailable() {
+  return ttsAvailable;
 }
 
 export async function generateSpeech(text) {

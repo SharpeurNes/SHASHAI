@@ -7,6 +7,7 @@ import { findAnimationByExpression } from './animations.js';
 import { triggerVNyan } from './avatarClient.js';
 import { startControlPanel, emitEvent, setupGracefulShutdown, onCommand } from './controlPanel.js';
 import { pickAndClearWindow, getWindowSize, setPaused, isPaused } from './chatBuffer.js';
+import { sendChatMessage } from './twitchClient.js';
 
 
 dotenv.config();
@@ -18,7 +19,7 @@ async function start() {
 
   startControlPanel();
   setupGracefulShutdown();
-  
+
   onCommand('pause', () => {
     setPaused(true);
     emitEvent('paused_state', { paused: true });
@@ -51,11 +52,18 @@ async function start() {
     });
   });
 
+  let textMode = false;
+
+  onCommand('toggle_text_mode', () => {
+    textMode = !textMode;
+    emitEvent('text_mode', { enabled: textMode });
+  });
+
   console.log(`SHASHAI démarré. Tirage toutes les ${intervalSeconds}s.`);
 
   setInterval(async () => {
     if (isPaused()) return;
-    
+
     const windowSize = getWindowSize();
     emitEvent('window_closed', { windowSize });
 
@@ -85,15 +93,25 @@ async function start() {
       return;
     }
 
-    enqueueSpeech(text, async (duration) => {
-      emitEvent('speaking_started', { reply: text, tag });
-      emitEvent('caption', { text, duration });
+    if (textMode) {
+      sendChatMessage(text);
+      emitEvent('chat_reply_sent', { reply: text, tag });
 
       if (tag) {
         const anim = await findAnimationByExpression(tag);
         if (anim) triggerVNyan(anim.id);
       }
-    });
+    } else {
+      enqueueSpeech(text, async (duration) => {
+        emitEvent('speaking_started', { reply: text, tag });
+        emitEvent('caption', { text, duration });
+
+        if (tag) {
+          const anim = await findAnimationByExpression(tag);
+          if (anim) triggerVNyan(anim.id);
+        }
+      });
+    }
   }, intervalSeconds * 1000);
 }
 
