@@ -2,6 +2,8 @@ SHASHAI is a project where an AI can read twitch chat, interract with text or vo
 
 Require: Chatterbox-tts-api for TTS, Gemini API key for LLM, VNyan for avatar controll
 
+You can change the SYSTEM_PROMPT inside src/llm.js
+
 Exemple .env:
 
 TWITCH_BOT_USERNAME=
